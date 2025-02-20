@@ -10,28 +10,11 @@ use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
 
-//#[derive(Serialize, Deserialize)]
-//struct School {
-//title: String,
-//descr: String,
-//title_langs: HashMap<String, String>,
-//descr_langs: HashMap<String, String>,
-//auth: String,
-//entity_id: String,
-//registrationAuthority: String,
-//assurance_certification: Vec<String>,
-//md_source: Vec<String>,
-//r#type: String,
-//hidden: String,
-//scope: String,
-//domain: String,
-//name_tag: String,
-//}
-
 #[derive(Serialize, Deserialize)]
 struct Skolor {
     schools: HashMap<u32, HashMap<String, serde_json::Value>>,
     answers: HashMap<String, Vec<u32>>,
+    sha1: HashMap<String, HashMap<String, serde_json::Value>>,
 }
 
 // This receives the queries
@@ -69,6 +52,7 @@ async fn update(req: HttpRequest) -> impl Responder {
     let mut my_data = data.lock().unwrap();
     my_data.schools = new_skolor.schools;
     my_data.answers = new_skolor.answers;
+    my_data.sha1 = new_skolor.sha1;
     HttpResponse::Ok().body("updated")
 }
 
@@ -87,6 +71,7 @@ async fn main() -> std::io::Result<()> {
     let data = Data::new(Mutex::new(Skolor {
         schools: HashMap::new(),
         answers: HashMap::new(),
+        sha1: HashMap::new(),
     }));
     HttpServer::new(move || {
         App::new()

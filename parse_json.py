@@ -10,6 +10,8 @@ def main2():
 
     details = {}
     result = {}
+    # for sha1 based look ups
+    sha1 = {}
     for i, school in enumerate(data):
         # First get the title for the school
         title = school.get("title", "")
@@ -24,6 +26,7 @@ def main2():
         school["id"] = sha_text
         # We added the hash
         details[i] = school
+        sha1[f"{sha_text}.json"] = school
         if not title:
             continue
         title = title.lower()
@@ -41,7 +44,7 @@ def main2():
 
     # Now we are done
     # save the data
-    webdata = {"schools": details, "answers": result}
+    webdata = {"schools": details, "answers": result, "sha1": sha1}
     with open("webdata.json", "w") as fobj:
         json.dump(webdata, fobj)
     # 300MB of output
