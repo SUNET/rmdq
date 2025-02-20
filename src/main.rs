@@ -56,8 +56,8 @@ async fn index_json(req: HttpRequest, path: web::Path<String>) -> Result<impl Re
 async fn update(req: HttpRequest) -> impl Responder {
     // First read the file
     // Please put it under tmpfs for fast reading.
-    let file = fs::File::open("webdata.json").expect("webdata.json file should exist");
-    let new_skolor: Skolor = serde_json::from_reader(file).expect("JSON is not well formatted");
+    let file_data = fs::read_to_string("webdata.json").expect("Cound not read.");
+    let new_skolor: Skolor = serde_json::from_str(&file_data).expect("JSON is not well formatted");
     let data = req.app_data::<Data<Mutex<Skolor>>>().unwrap();
     //.app_data::<Data<Mutex<HashMap<String, String>>>>()
 
