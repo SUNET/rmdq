@@ -40,11 +40,23 @@ async fn index(req: HttpRequest) -> Result<impl Responder> {
     Ok(web::Json(result))
 }
 
+#[get("/entities/{shafile}")]
+async fn index_json(req: HttpRequest, path: web::Path<String>) -> Result<impl Responder> {
+    let file_name = path.into_inner();
+
+    let data = req.app_data::<Data<Mutex<Skolor>>>().unwrap();
+    let my_data = data.lock().unwrap();
+    // Dummy query
+    let school = my_data.sha1.get(&file_name).unwrap();
+    // Return the result as JSON
+    Ok(web::Json(school.clone()))
+}
+
 #[get("/update")]
 async fn update(req: HttpRequest) -> impl Responder {
     // First read the file
     // Please put it under tmpfs for fast reading.
-    let file = fs::File::open("/tmp/webdata.json").expect("webdata.json file should exist");
+    let file = fs::File::open("webdata.json").expect("webdata.json file should exist");
     let new_skolor: Skolor = serde_json::from_reader(file).expect("JSON is not well formatted");
     let data = req.app_data::<Data<Mutex<Skolor>>>().unwrap();
     //.app_data::<Data<Mutex<HashMap<String, String>>>>()
@@ -55,15 +67,6 @@ async fn update(req: HttpRequest) -> impl Responder {
     my_data.sha1 = new_skolor.sha1;
     HttpResponse::Ok().body("updated")
 }
-
-//async fn manual_hello(req: HttpRequest) -> impl Responder {
-//let data = req
-//.app_data::<Data<Mutex<HashMap<String, String>>>>()
-//.unwrap();
-//let mut my_data = data.lock().unwrap();
-//my_data.insert("name".to_string(), "Kushal".to_string());
-//HttpResponse::Ok().body("Hey there!")
-//}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -77,10 +80,11 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(Data::clone(&data))
             .service(index)
+            .service(index_json)
             .service(update)
         //.route("/hey", web::get().to(manual_hello))
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind(("0.0.0.0", 8080))?
     .run()
     .await
 }

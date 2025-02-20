@@ -16,9 +16,6 @@ def main2():
         # First get the title for the school
         title = school.get("title", "")
         system_type = school.get("type", "")
-        # Let us remove all SPs
-        if system_type != "idp":
-            continue
         # We need calculate hash
         m = hashlib.sha1()
         m.update(school["entity_id"].encode("utf-8"))
@@ -27,6 +24,10 @@ def main2():
         # We added the hash
         details[i] = school
         sha1[f"{sha_text}.json"] = school
+        # Let us remove all SPs
+        if system_type != "idp":
+            continue
+
         if not title:
             continue
         title = title.lower()
