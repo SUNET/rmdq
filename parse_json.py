@@ -1,8 +1,9 @@
+#!/usr/bin/env python
 import hashlib
 import json
 
 
-def main2():
+def main():
     filename = "ds.json"
 
     with open(filename) as fobj:
@@ -32,9 +33,9 @@ def main2():
             continue
         title = title.lower()
         length = len(title)
-        for start in range(0, length -1):
-            end = start + 1 
-            while end <= length: # Has to be smaller for 1 char
+        for start in range(0, length - 1):
+            end = start + 1
+            while end <= length:  # Has to be smaller for 1 char
                 # This is  what the student has typed
                 key = title[start:end]
                 output = result.get(key, [])
@@ -45,14 +46,13 @@ def main2():
 
     # Now we are done
     # save the data
+    outputfile = "webdata.json"
     webdata = {"schools": details, "answers": result, "sha1": sha1}
-    with open("webdata.json", "w") as fobj:
+    with open(outputfile, "w") as fobj:
         json.dump(webdata, fobj)
-    # 300MB of output
-    print("Done")
-
-
+    # 8MB of output
+    print(f"Data converted to {outputfile}")
 
 
 if __name__ == "__main__":
-    main2()
+    main()
