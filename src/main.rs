@@ -18,7 +18,7 @@ struct Skolor {
 }
 
 // This receives the queries
-#[get("/")]
+#[get("/entities")]
 async fn index(req: HttpRequest) -> Result<impl Responder> {
     // A name which should not be there
     let cannot = "CANONOTBEA".to_string();
