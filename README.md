@@ -1,6 +1,6 @@
 # rmdq
 
-A fast MDQ JSON server implementation.
+A MDQ JSON server implementation in Rust.
 
 ## How to build?
 
