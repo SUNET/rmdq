@@ -1,5 +1,7 @@
 use actix_web::{
+    body::BoxBody,
     get,
+    http::header::ContentType,
     web::{self, Data},
     App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
@@ -17,9 +19,27 @@ struct Skolor {
     sha1: HashMap<String, HashMap<String, serde_json::Value>>,
 }
 
+#[derive(Serialize)]
+struct JsonObj {
+    data: String,
+}
+
+// Responder
+impl Responder for JsonObj {
+    type Body = BoxBody;
+
+    fn respond_to(self, _req: &HttpRequest) -> HttpResponse<Self::Body> {
+        // Create response and set content type
+        HttpResponse::Ok()
+            .content_type(ContentType::json())
+            .insert_header(("Cache-Control", "max-age=310"))
+            .body(self.data)
+    }
+}
+
 // This receives the queries
 #[get("/entities")]
-async fn index(req: HttpRequest) -> Result<impl Responder> {
+async fn index(req: HttpRequest) -> impl Responder {
     // A name which should not be there
     let cannot = "CANONOTBEA".to_string();
     let params = web::Query::<HashMap<String, String>>::from_query(req.query_string()).unwrap();
@@ -37,7 +57,9 @@ async fn index(req: HttpRequest) -> Result<impl Responder> {
         result.push(a_school.clone());
     }
     // Return the result as JSON
-    Ok(web::Json(result))
+    //
+    let body = serde_json::to_string(&result).unwrap();
+    return JsonObj { data: body };
 }
 
 #[get("/entities/{shafile}")]
