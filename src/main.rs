@@ -1,6 +1,6 @@
 use actix_web::{
     body::BoxBody,
-    get,
+    error, get,
     http::header::ContentType,
     web::{self, Data},
     App, HttpRequest, HttpResponse, HttpServer, Responder,
@@ -41,14 +41,31 @@ impl Responder for JsonObj {
 #[get("/entities")]
 async fn index(req: HttpRequest) -> impl Responder {
     // A name which should not be there
-    let cannot = "CANONOTBEA".to_string();
-    let params = web::Query::<HashMap<String, String>>::from_query(req.query_string()).unwrap();
-    let typed_data = params.get("q").unwrap_or(&cannot);
+    let params = match web::Query::<HashMap<String, String>>::from_query(req.query_string()) {
+        Ok(data) => data,
+        Err(_) => return Err(error::ErrorBadRequest("Missing params")),
+    };
+    let typed_data = match params.get("q") {
+        Some(data) => data,
+        None => return Err(error::ErrorInternalServerError("Server parameter q.")),
+    };
 
-    let data = req.app_data::<Data<Mutex<Skolor>>>().unwrap();
-    let my_data = data.lock().unwrap();
+    let data = match req.app_data::<Data<Mutex<Skolor>>>() {
+        Some(d) => d,
+        None => return Err(error::ErrorInternalServerError("Could not access mutex")),
+    };
+    let my_data = match data.lock() {
+        Ok(d) => d,
+        Err(_) => return Err(error::ErrorInternalServerError("Could not get the lock.")),
+    };
     // Dummy query
-    let names = my_data.answers.get(typed_data).unwrap();
+    let names = match my_data.answers.get(typed_data) {
+        Some(d) => d,
+        None => {
+            let body = "[]".to_string();
+            return Ok(JsonObj { data: body });
+        }
+    };
     // This will be the result to send back as response in JSON
     let mut result: Vec<HashMap<String, serde_json::Value>> = Vec::new();
     // Now let us loop over
@@ -58,8 +75,11 @@ async fn index(req: HttpRequest) -> impl Responder {
     }
     // Return the result as JSON
     //
-    let body = serde_json::to_string(&result).unwrap();
-    return JsonObj { data: body };
+    let body = match serde_json::to_string(&result) {
+        Ok(d) => d,
+        Err(_) => return Err(error::ErrorInternalServerError("JSON error")),
+    };
+    return Ok(JsonObj { data: body });
 }
 
 #[get("/entities/{shafile}")]
@@ -80,7 +100,9 @@ async fn update(req: HttpRequest) -> impl Responder {
     // Please put it under tmpfs for fast reading.
     let file_data = fs::read_to_string("webdata.json").expect("Cound not read.");
     let new_skolor: Skolor = serde_json::from_str(&file_data).expect("JSON is not well formatted");
-    let data = req.app_data::<Data<Mutex<Skolor>>>().unwrap();
+    let data = req
+        .app_data::<Data<Mutex<Skolor>>>()
+        .expect("Could not get lock to update");
     //.app_data::<Data<Mutex<HashMap<String, String>>>>()
 
     let mut my_data = data.lock().unwrap();
