@@ -24,7 +24,9 @@ def main():
         school["id"] = sha_text
         # We added the hash
         details[i] = school
+        # For both with json ending and without
         sha1[f"{sha_text}.json"] = school
+        sha1[f"{sha_text}"] = school
         # Let us remove all SPs
         if system_type != "idp":
             continue
