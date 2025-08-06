@@ -50,13 +50,9 @@ async fn index(req: HttpRequest) -> impl Responder {
         None => return Err(error::ErrorInternalServerError("Server parameter q.")),
     };
 
-    let data = match req.app_data::<Data<Mutex<Skolor>>>() {
+    let my_data = match req.app_data::<Data<Skolor>>() {
         Some(d) => d,
         None => return Err(error::ErrorInternalServerError("Could not access mutex")),
-    };
-    let my_data = match data.lock() {
-        Ok(d) => d,
-        Err(_) => return Err(error::ErrorInternalServerError("Could not get the lock.")),
     };
     // Dummy query
     let names = match my_data.answers.get(typed_data) {
@@ -84,12 +80,13 @@ async fn index(req: HttpRequest) -> impl Responder {
 
 #[get("/entities/{shafile}")]
 async fn index_json(req: HttpRequest, path: web::Path<String>) -> Result<impl Responder> {
-    let file_name = path.into_inner();
+    let shafile = path.into_inner();
 
-    let data = req.app_data::<Data<Mutex<Skolor>>>().unwrap();
-    let my_data = data.lock().unwrap();
+    println!("{shafile:?}");
+
+    let data = req.app_data::<Data<Skolor>>().unwrap();
     // Dummy query
-    let school = my_data.sha1.get(&file_name).unwrap();
+    let school = data.sha1.get(&shafile).unwrap();
     // Return the result as JSON
     Ok(web::Json(school.clone()))
 }
@@ -115,27 +112,15 @@ async fn update(req: HttpRequest) -> impl Responder {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     //let data = Data::new(Mutex::new(HashMap::<String, String>::new()));
-    let data = Data::new(Mutex::new(Skolor {
-        providers: HashMap::new(),
-        answers: HashMap::new(),
-        sha1: HashMap::new(),
-    }));
     let file_data = fs::read_to_string("webdata.json").expect("Cound not read.");
     let new_skolor: Skolor = serde_json::from_str(&file_data).expect("JSON is not well formatted");
+    let data = Data::new(new_skolor);
     //.app_data::<Data<Mutex<HashMap<String, String>>>>()
-
-    {
-        let mut my_data = data.lock().unwrap();
-        my_data.providers = new_skolor.providers;
-        my_data.answers = new_skolor.answers;
-        my_data.sha1 = new_skolor.sha1;
-    }
     HttpServer::new(move || {
         App::new()
             .app_data(Data::clone(&data.clone()))
             .service(index)
             .service(index_json)
-            .service(update)
         //.route("/hey", web::get().to(manual_hello))
     })
     .bind(("0.0.0.0", 8085))?
