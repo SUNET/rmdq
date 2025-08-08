@@ -75,7 +75,7 @@ async fn index(req: HttpRequest) -> impl Responder {
         Ok(d) => d,
         Err(_) => return Err(error::ErrorInternalServerError("JSON error")),
     };
-    return Ok(JsonObj { data: body });
+    Ok(JsonObj { data: body })
 }
 
 #[get("/entities/{shafile}")]
