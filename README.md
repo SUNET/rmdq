@@ -26,21 +26,20 @@ cargo run
 
 ## Routes available
 
-- http://localhost:8080/entities?q=sol
+- http://localhost:8080/entities?q=swe
 - http://localhost:8080/entities/%7Bsha1%7D5dc5772ac948105273633713fcc018fed26b1c3b.json
 
 
 ## Test data to try out
 
-In a different terminal start the application first.
 
 ```
 ./fetch_metadata.py https://ta.oidfed.data.kit.edu/discover?trust_anchor=https://edugain.oidf.lab.surf.nl&entity_type=openid_provider
-curl http://localhost:8080/update  # to load the data
+cargo run
 ```
 
 To test a single query:
 
 ```
-curl http://localhost:8080/entities?q=sab
+curl http://localhost:8080/entities?q=ris
 ```
