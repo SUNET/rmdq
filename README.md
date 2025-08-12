@@ -7,7 +7,7 @@ A MDQ JSON server implementation in Rust.
 First install Rust following https://rustup.rs and then follow along.
 
 ```
-git clone https://github.com/kushaldas/rmdq
+git clone https://github.com/SUNET/rmdq
 cd rmdq
 cargo build --release
 ./target/release/rmdq
@@ -15,35 +15,31 @@ cargo build --release
 
 ## To load data
 
-The server starts with an empty state (we can change it later).
-Get the latest `ds.json` and use `./parse_json.py` to create `webdata.json` in the same folder.
+Use `./fetch_metadata.py` to create `webdata.json` in the same folder.
+Then start the server `cargo run`
 
-Now you can call `http://localhost:8080/update` to load the latest version of the data on the app (from the json file).
 
 ```
-curl -O https://ds.environment.tld/ds.json
-./parse_json.py
-curl http://localhost:8080/update
+./fetch_metadata.py
+cargo run
 ```
 
 ## Routes available
 
-- http://localhost:8080/entities?q=sol
+- http://localhost:8080/entities?q=swe
 - http://localhost:8080/entities/%7Bsha1%7D5dc5772ac948105273633713fcc018fed26b1c3b.json
 
 
 ## Test data to try out
 
-In a different terminal start the application first.
 
 ```
-curl https://raw.githubusercontent.com/TheIdentitySelector/thiss-mdq/refs/heads/master/test/edugain.json -o sp.json
-python3 parse_json.py
-curl http://localhost:8080/update  # to load the data
+./fetch_metadata.py https://ta.oidfed.data.kit.edu/discover?trust_anchor=https://edugain.oidf.lab.surf.nl&entity_type=openid_provider
+cargo run
 ```
 
 To test a single query:
 
 ```
-curl http://localhost:8080/entities?q=sab
+curl http://localhost:8080/entities?q=ris
 ```

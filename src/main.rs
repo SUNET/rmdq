@@ -14,7 +14,7 @@ use serde_json::Result;
 
 #[derive(Serialize, Deserialize)]
 struct Skolor {
-    schools: HashMap<u32, HashMap<String, serde_json::Value>>,
+    providers: HashMap<u32, HashMap<String, serde_json::Value>>,
     answers: HashMap<String, Vec<u32>>,
     sha1: HashMap<String, HashMap<String, serde_json::Value>>,
 }
@@ -50,13 +50,9 @@ async fn index(req: HttpRequest) -> impl Responder {
         None => return Err(error::ErrorInternalServerError("Server parameter q.")),
     };
 
-    let data = match req.app_data::<Data<Mutex<Skolor>>>() {
+    let my_data = match req.app_data::<Data<Skolor>>() {
         Some(d) => d,
         None => return Err(error::ErrorInternalServerError("Could not access mutex")),
-    };
-    let my_data = match data.lock() {
-        Ok(d) => d,
-        Err(_) => return Err(error::ErrorInternalServerError("Could not get the lock.")),
     };
     // Dummy query
     let names = match my_data.answers.get(typed_data) {
@@ -70,7 +66,7 @@ async fn index(req: HttpRequest) -> impl Responder {
     let mut result: Vec<HashMap<String, serde_json::Value>> = Vec::new();
     // Now let us loop over
     for index in names {
-        let a_school = my_data.schools.get(index).unwrap();
+        let a_school = my_data.providers.get(index).unwrap();
         result.push(a_school.clone());
     }
     // Return the result as JSON
@@ -79,17 +75,18 @@ async fn index(req: HttpRequest) -> impl Responder {
         Ok(d) => d,
         Err(_) => return Err(error::ErrorInternalServerError("JSON error")),
     };
-    return Ok(JsonObj { data: body });
+    Ok(JsonObj { data: body })
 }
 
 #[get("/entities/{shafile}")]
 async fn index_json(req: HttpRequest, path: web::Path<String>) -> Result<impl Responder> {
-    let file_name = path.into_inner();
+    let shafile = path.into_inner();
 
-    let data = req.app_data::<Data<Mutex<Skolor>>>().unwrap();
-    let my_data = data.lock().unwrap();
+    println!("{shafile:?}");
+
+    let data = req.app_data::<Data<Skolor>>().unwrap();
     // Dummy query
-    let school = my_data.sha1.get(&file_name).unwrap();
+    let school = data.sha1.get(&shafile).unwrap();
     // Return the result as JSON
     Ok(web::Json(school.clone()))
 }
@@ -106,7 +103,7 @@ async fn update(req: HttpRequest) -> impl Responder {
     //.app_data::<Data<Mutex<HashMap<String, String>>>>()
 
     let mut my_data = data.lock().unwrap();
-    my_data.schools = new_skolor.schools;
+    my_data.providers = new_skolor.providers;
     my_data.answers = new_skolor.answers;
     my_data.sha1 = new_skolor.sha1;
     HttpResponse::Ok().body("updated")
@@ -115,20 +112,18 @@ async fn update(req: HttpRequest) -> impl Responder {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     //let data = Data::new(Mutex::new(HashMap::<String, String>::new()));
-    let data = Data::new(Mutex::new(Skolor {
-        schools: HashMap::new(),
-        answers: HashMap::new(),
-        sha1: HashMap::new(),
-    }));
+    let file_data = fs::read_to_string("webdata.json").expect("Cound not read.");
+    let new_skolor: Skolor = serde_json::from_str(&file_data).expect("JSON is not well formatted");
+    let data = Data::new(new_skolor);
+    //.app_data::<Data<Mutex<HashMap<String, String>>>>()
     HttpServer::new(move || {
         App::new()
-            .app_data(Data::clone(&data))
+            .app_data(Data::clone(&data.clone()))
             .service(index)
             .service(index_json)
-            .service(update)
         //.route("/hey", web::get().to(manual_hello))
     })
-    .bind(("0.0.0.0", 8080))?
+    .bind(("0.0.0.0", 8085))?
     .run()
     .await
 }
