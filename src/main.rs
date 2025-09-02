@@ -2,6 +2,7 @@ use actix_web::{
     body::BoxBody,
     error, get,
     http::header::ContentType,
+    routes,
     web::{self, Data},
     App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
@@ -38,7 +39,9 @@ impl Responder for JsonObj {
 }
 
 // This receives the queries
+#[routes]
 #[get("/entities")]
+#[get("/entities/")]
 async fn index(req: HttpRequest) -> impl Responder {
     // A name which should not be there
     let params = match web::Query::<HashMap<String, String>>::from_query(req.query_string()) {
