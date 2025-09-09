@@ -11,7 +11,6 @@ use std::fs;
 use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
-use serde_json::Result;
 
 #[derive(Serialize, Deserialize)]
 struct Skolor {
@@ -82,16 +81,18 @@ async fn index(req: HttpRequest) -> impl Responder {
 }
 
 #[get("/entities/{shafile}")]
-async fn index_json(req: HttpRequest, path: web::Path<String>) -> Result<impl Responder> {
+async fn index_json(req: HttpRequest, path: web::Path<String>) -> impl Responder {
     let shafile = path.into_inner();
 
     println!("{shafile:?}");
 
     let data = req.app_data::<Data<Skolor>>().unwrap();
     // Dummy query
-    let school = data.sha1.get(&shafile).unwrap();
+    match data.sha1.get(&shafile) {
+        Some(school) => return Ok(web::Json(school.clone())),
+        None => return Err(error::ErrorNotFound("Not Found")),
+    };
     // Return the result as JSON
-    Ok(web::Json(school.clone()))
 }
 
 #[get("/update")]
